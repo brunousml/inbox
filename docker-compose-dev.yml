@@ -1,76 +1,153 @@
 version: '2'
 
 volumes:
-  postgres_data_dev: {}
-  postgres_backup_dev: {}
+  postgres_data: {}
+  postgres_backup: {}
   django_media: {}
+  django_static: {}
 
 services:
+### Infraestructure Setup ####
+  redis:
+    restart: always
+    image: redis:latest
+
+  nginx:
+    image: nginx
+
+  clamav:
+    build: ./compose/clamav
+    ports:
+      - 3310:3310
+
   postgres:
+    restart: always
     build: ./compose/postgres
     volumes:
-      - postgres_data_dev:/var/lib/postgresql/data
-      - postgres_backup_dev:/backups
+      - postgres_data:/var/lib/postgresql/data
+      - postgres_backup:/backups
+    environment:
+      - CLAMAV_HOST:clamav
+      - CLAMAV_PORT=3310
+      - DJANGO_ACCOUNT_ALLOW_REGISTRATION=true
+      - DJANGO_ADMIN_URL=
+      - DJANGO_ALLOWED_HOSTS=*
+      - DJANGO_MAILGUN_API_KEY=
+      - DJANGO_SECRET_KEY=e&@q(%h-6^r-+y7(d@x3)9#0gzq7p6-x=8nn+s#u2#^5+d_@ut
+      - DJANGO_SECURE_SSL_REDIRECT=false
+      - DJANGO_SERVER_EMAIL=
+      - DJANGO_SETTINGS_MODULE=config.settings.production
+      - POSTGRES_PASSWORD=Too3weim
+      - POSTGRES_USER=inbox
     ports:
-      - "5431:5432"
+      - 5432:5432
 
+#### Application Setup ####
   django:
     build:
       context: .
       dockerfile: ./compose/django/Dockerfile-dev
+    user: django
     command: /start-dev.sh
     depends_on:
       - postgres
       - redis
     environment:
       - USE_DOCKER=yes
+    environment:
+      - CLAMAV_HOST:clamav
+      - CLAMAV_PORT=3310
+      - DJANGO_ACCOUNT_ALLOW_REGISTRATION=true
+      - DJANGO_ADMIN_URL=
+      - DJANGO_ALLOWED_HOSTS=*
+      - DJANGO_MAILGUN_API_KEY=
+      - DJANGO_SECRET_KEY=e&@q(%h-6^r-+y7(d@x3)9#0gzq7p6-x=8nn+s#u2#^5+d_@ut
+      - DJANGO_SECURE_SSL_REDIRECT=false
+      - DJANGO_SERVER_EMAIL=
+      - DJANGO_SETTINGS_MODULE=config.settings.production
+      - POSTGRES_PASSWORD=Too3weim
+      - POSTGRES_USER=inbox
     volumes:
       - .:/app
       - django_media:/app/inbox/media
+      - django_static:/app/inbox/static
+    links:
+      - postgres
     ports:
-      - "8000:8000"
+      - 8000:8000
     stdin_open: True
     tty: True
 
-  redis:
-    image: redis:latest
-
-# ------
-# Os serviços abaixo executam as tarefas assíncronas.
-# ------
   celeryworker:
     build:
       context: .
       dockerfile: ./compose/django/Dockerfile-dev
+    user: django
+    environment:
+      - USE_DOCKER=yes
+      - C_FORCE_ROOT=yes  # confirma a execução do celery como super-usuário
+      - CLAMAV_HOST:clamav
+      - CLAMAV_PORT=3310
+      - DJANGO_ACCOUNT_ALLOW_REGISTRATION=true
+      - DJANGO_ADMIN_URL=
+      - DJANGO_ALLOWED_HOSTS=*
+      - DJANGO_MAILGUN_API_KEY=
+      - DJANGO_SECRET_KEY=e&@q(%h-6^r-+y7(d@x3)9#0gzq7p6-x=8nn+s#u2#^5+d_@ut
+      - DJANGO_SECURE_SSL_REDIRECT=false
+      - DJANGO_SERVER_EMAIL=
+      - DJANGO_SETTINGS_MODULE=config.settings.production
+      - POSTGRES_PASSWORD=Too3weim
+      - POSTGRES_USER=inbox
+    volumes:
+      - .:/app
+      - django_media:/app/inbox/media
     depends_on:
      - postgres
      - redis
      - clamav
-    environment:
-      - USE_DOCKER=yes
-      - C_FORCE_ROOT=yes  # confirma a execução do celery como super-usuário
-    volumes:
-      - .:/app
-      - django_media:/app/inbox/media
-    command: celery -A inbox.taskapp worker -l INFO
+    command:
+      - celery
+      - -A
+      - inbox.taskapp
+      - worker
+      - -l
+      - INFO
 
   celerybeat:
     build:
       context: .
       dockerfile: ./compose/django/Dockerfile-dev
+    user: django
+    environment:
+      - USE_DOCKER=yes
+      - CLAMAV_HOST:clamav
+      - CLAMAV_PORT=3310
+      - DJANGO_ACCOUNT_ALLOW_REGISTRATION=true
+      - DJANGO_ADMIN_URL=
+      - DJANGO_ALLOWED_HOSTS=*
+      - DJANGO_MAILGUN_API_KEY=
+      - DJANGO_SECRET_KEY=e&@q(%h-6^r-+y7(d@x3)9#0gzq7p6-x=8nn+s#u2#^5+d_@ut
+      - DJANGO_SECURE_SSL_REDIRECT=false
+      - DJANGO_SERVER_EMAIL=
+      - DJANGO_SETTINGS_MODULE=config.settings.production
+      - POSTGRES_PASSWORD=Too3weim
+      - POSTGRES_USER=inbox
     depends_on:
       - postgres
       - redis
       - clamav
-    environment:
-      - USE_DOCKER=yes
     volumes:
       - .:/app
       - django_media:/app/inbox/media
-    command: celery -A inbox.taskapp beat -l INFO
+    command:
+      - celery
+      - -A
+      - inbox.taskapp
+      - beat
+      - -l
+      - INFO
 
-  clamav:
-    build: ./compose/clamav
-    ports:
-      - "3310:3310"
+
+
+
 

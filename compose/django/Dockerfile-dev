@@ -1,16 +1,19 @@
 FROM python:3.5
 
 ENV PYTHONUNBUFFERED 1
+MAINTAINER scielo <scielo@scielo.org>
 
-RUN apt-get update && apt-get install -qqy apt-utils && apt-get install -qqy libxml2-utils
+RUN apt-get update \
+    && apt-get install -qqy apt-utils \
+    && apt-get install -qqy libxml2-utils
 
-# Requirements have to be pulled and installed here, otherwise caching won't work
 COPY ./requirements /requirements
-RUN pip install -r /requirements/local.txt
+RUN pip install -r /requirements/local.txt \
+    && groupadd -r django \
+    && useradd -r -g django django
 
 RUN mkdir -p /etc/xml \
     && bash -c "$(curl -fsSL https://raw.githubusercontent.com/scieloorg/packtools/master/scripts/install_xml_catalog.sh)"
-
 
 COPY ./compose/django/entrypoint.sh /entrypoint.sh
 RUN sed -i 's/\r//' /entrypoint.sh
@@ -22,5 +25,7 @@ RUN chmod +x /start-dev.sh
 
 VOLUME /app/inbox/media
 WORKDIR /app
+
+USER django
 
 ENTRYPOINT ["/entrypoint.sh"]

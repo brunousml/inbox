@@ -1,25 +1,143 @@
 version: '2'
 
+volumes:
+  inbox-postgres: {}
+  inbox-postgres-backup: {}
+  inbox-django-media: {}
+  inbox-django-static: {}
 
 services:
-  postgres:
-    build: ./compose/postgres
-
   redis:
     image: redis:latest
+    labels:
+      io.rancher.container.pull_image: always
+
+  nginx:
+    build: ./compose/nginx
+    volumes:
+      - inbox-django-static:/static
+      - inbox-django-media:/media
+    links:
+      - django
+    ports:
+      - 8080:80
+
+  clamav:
+    build: ./compose/clamav
+    ports:
+      - 3310:3310/tcp
+    labels:
+      io.rancher.container.pull_image: always
+
+  postgres:
+    build: ./compose/postgres
+    environment:
+      - POSTGRES_PASSWORD=Too3weim
+      - POSTGRES_USER=inbox
+    volumes:
+      - inbox-postgres:/var/lib/postgresql/data
+      - inbox-postgres-backup:/backups
+    ports:
+      - 5432/tcp
+    labels:
+      io.rancher.container.pull_image: always
 
   django:
     build:
       context: .
-      dockerfile: ./compose/django/Dockerfile-dev
-    command: /start-dev.sh
+      dockerfile: ./compose/django/Dockerfile
     environment:
-      - USE_DOCKER=yes
-    volumes:
-      - .:/app
+      - CLAMAV_HOST:clamav
+      - CLAMAV_PORT=3310
+      - DJANGO_ACCOUNT_ALLOW_REGISTRATION=true
+      - DJANGO_ADMIN_URL=
+      - DJANGO_ALLOWED_HOSTS=*
+      - DJANGO_MAILGUN_API_KEY=
+      - DJANGO_SECRET_KEY=e&@q(%h-6^r-+y7(d@x3)9#0gzq7p6-x=8nn+s#u2#^5+d_@ut
+      - DJANGO_SECURE_SSL_REDIRECT=false
+      - DJANGO_SERVER_EMAIL=
+      - DJANGO_SETTINGS_MODULE=config.settings.production
+      - POSTGRES_PASSWORD=Too3weim
+      - POSTGRES_USER=inbox
     ports:
-      - "8000:8000"
+      - 5000:5000/tcp
+    user: django
+    command:
+      - /gunicorn.sh
     links:
       - postgres
-      - redis
+    volumes:
+      - inbox-django-media:/app/media
+      - inbox-django-static:/app/static
+    labels:
+      io.rancher.container.pull_image: always
 
+  celeryworker:
+    build:
+      context: .
+      dockerfile: ./compose/django/Dockerfile
+    environment:
+      - CLAMAV_HOST=clamav
+      - CLAMAV_PORT=3310
+      - DJANGO_ACCOUNT_ALLOW_REGISTRATION=true
+      - DJANGO_ADMIN_URL=
+      - DJANGO_ALLOWED_HOSTS=*
+      - DJANGO_MAILGUN_API_KEY=
+      - DJANGO_SECRET_KEY=e&@q(%h-6^r-+y7(d@x3)9#0gzq7p6-x=8nn+s#u2#^5+d_@ut
+      - DJANGO_SECURE_SSL_REDIRECT=false
+      - DJANGO_SERVER_EMAIL=
+      - DJANGO_SETTINGS_MODULE=config.settings.production
+      - POSTGRES_PASSWORD=Too3weim
+      - POSTGRES_USER=inbox
+    volumes:
+      - inbox-django-media:/app/media
+      - inbox-django-static:/app/static
+    links:
+      - clamav:clamav
+      - redis:redis
+      - postgres:postgres
+    user: django
+    command:
+      - celery
+      - -A
+      - inbox.taskapp
+      - worker
+      - -l
+      - INFO
+    labels:
+      io.rancher.container.pull_image: always
+
+  celerybeat:
+    build:
+      context: .
+      dockerfile: ./compose/django/Dockerfile
+    environment:
+      - CLAMAV_HOST=clamav
+      - CLAMAV_PORT=3310
+      - DJANGO_ACCOUNT_ALLOW_REGISTRATION=true
+      - DJANGO_ADMIN_URL=
+      - DJANGO_ALLOWED_HOSTS=*
+      - DJANGO_MAILGUN_API_KEY=
+      - DJANGO_SECRET_KEY=e&@q(%h-6^r-+y7(d@x3)9#0gzq7p6-x=8nn+s#u2#^5+d_@ut
+      - DJANGO_SECURE_SSL_REDIRECT=false
+      - DJANGO_SERVER_EMAIL=
+      - DJANGO_SETTINGS_MODULE=config.settings.production
+      - POSTGRES_PASSWORD=Too3weim
+      - POSTGRES_USER=inbox
+    volumes:
+      - inbox-django-media:/app/media
+      - inbox-django-static:/app/static
+    links:
+      - clamav:clamav
+      - redis:redis
+      - postgres:postgres
+    user: django
+    command:
+      - celery
+      - -A
+      - inbox.taskapp
+      - beat
+      - -l
+      - INFO
+    labels:
+      io.rancher.container.pull_image: always
