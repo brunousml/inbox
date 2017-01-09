@@ -173,7 +173,6 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 STATIC_ROOT = str(ROOT_DIR('static'))
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 AWS_PRELOAD_METADATA = True
-# COLLECTFAST_ENABLED = False
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#static-url
 STATIC_URL = '/static/'
