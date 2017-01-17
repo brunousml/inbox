@@ -17,8 +17,8 @@ services:
   postgres:
     image: scieloorg/inbox_postgres
     environment:
-      - POSTGRES_PASSWORD=your-value-here
-      - POSTGRES_USER=your-value-here
+      - POSTGRES_PASSWORD=
+      - POSTGRES_USER=postgres
     volumes:
       - inbox-postgres:/var/lib/postgresql/data
       - inbox-postgres-backup:/backups
@@ -40,25 +40,25 @@ services:
     links:
       - django
     ports:
-      - 80
+      - 80:80
 
   django:
     image: scieloorg/inbox
     environment:
-      - CLAMAV_HOST=your-value-here
-      - CLAMAV_PORT=your-value-here
-      - DJANGO_ACCOUNT_ALLOW_REGISTRATION=your-value-here
-      - DJANGO_ADMIN_URL=your-value-here
-      - DJANGO_ALLOWED_HOSTS=your-value-here
-      - DJANGO_MAILGUN_API_KEY=your-value-here
-      - DJANGO_SECRET_KEY=your-value-here
-      - DJANGO_SECURE_SSL_REDIRECT=your-value-here
-      - DJANGO_SERVER_EMAIL=your-value-here
-      - DJANGO_SETTINGS_MODULE=your-value-here
-      - POSTGRES_PASSWORD=your-value-here
-      - POSTGRES_USER=your-value-here
+      - CLAMAV_HOST:clamav
+      - CLAMAV_PORT=3310
+      - DJANGO_ACCOUNT_ALLOW_REGISTRATION=true
+      - DJANGO_ADMIN_URL=
+      - DJANGO_ALLOWED_HOSTS=*
+      - DJANGO_MAILGUN_API_KEY=
+      - DJANGO_SECRET_KEY=e&@q(%h-6^r-+y7(d@x3)9#0gzq7p6-x=8nn+s#u2#^5+d_@ut
+      - DJANGO_SECURE_SSL_REDIRECT=false
+      - DJANGO_SERVER_EMAIL=
+      - DJANGO_SETTINGS_MODULE=config.settings.production
+      - POSTGRES_PASSWORD=
+      - POSTGRES_USER=postgres
     ports:
-      - 5000/tcp
+      - 5000:5000
     user: django
     command:
       - /gunicorn.sh
@@ -73,18 +73,18 @@ services:
   celeryworker:
     image: scieloorg/inbox
     environment:
-      - CLAMAV_HOST:your-value-here
-      - CLAMAV_PORT=your-value-here
-      - DJANGO_ACCOUNT_ALLOW_REGISTRATION=your-value-here
-      - DJANGO_ADMIN_URL=your-value-here
-      - DJANGO_ALLOWED_HOSTS=your-value-here
-      - DJANGO_MAILGUN_API_KEY=your-value-here
-      - DJANGO_SECRET_KEY=your-value-here
-      - DJANGO_SECURE_SSL_REDIRECT=your-value-here
-      - DJANGO_SERVER_EMAIL=your-value-here
-      - DJANGO_SETTINGS_MODULE=your-value-here
-      - POSTGRES_PASSWORD=your-value-here
-      - POSTGRES_USER=your-value-here
+      - CLAMAV_HOST:clamav
+      - CLAMAV_PORT=3310
+      - DJANGO_ACCOUNT_ALLOW_REGISTRATION=true
+      - DJANGO_ADMIN_URL=
+      - DJANGO_ALLOWED_HOSTS=*
+      - DJANGO_MAILGUN_API_KEY=
+      - DJANGO_SECRET_KEY=e&@q(%h-6^r-+y7(d@x3)9#0gzq7p6-x=8nn+s#u2#^5+d_@ut
+      - DJANGO_SECURE_SSL_REDIRECT=false
+      - DJANGO_SERVER_EMAIL=
+      - DJANGO_SETTINGS_MODULE=config.settings.production
+      - POSTGRES_PASSWORD=
+      - POSTGRES_USER=postgres
     volumes:
       - inbox-django-media:/app/media
     links:
@@ -100,18 +100,18 @@ services:
   celerybeat:
     image: scieloorg/inbox
     environment:
-      - CLAMAV_HOST:your-value-here
-      - CLAMAV_PORT=your-value-here
-      - DJANGO_ACCOUNT_ALLOW_REGISTRATION=your-value-here
-      - DJANGO_ADMIN_URL=your-value-here
-      - DJANGO_ALLOWED_HOSTS=your-value-here
-      - DJANGO_MAILGUN_API_KEY=your-value-here
-      - DJANGO_SECRET_KEY=your-value-here
-      - DJANGO_SECURE_SSL_REDIRECT=your-value-here
-      - DJANGO_SERVER_EMAIL=your-value-here
-      - DJANGO_SETTINGS_MODULE=your-value-here
-      - POSTGRES_PASSWORD=your-value-here
-      - POSTGRES_USER=your-value-here
+      - CLAMAV_HOST:clamav
+      - CLAMAV_PORT=3310
+      - DJANGO_ACCOUNT_ALLOW_REGISTRATION=true
+      - DJANGO_ADMIN_URL=
+      - DJANGO_ALLOWED_HOSTS=*
+      - DJANGO_MAILGUN_API_KEY=
+      - DJANGO_SECRET_KEY=e&@q(%h-6^r-+y7(d@x3)9#0gzq7p6-x=8nn+s#u2#^5+d_@ut
+      - DJANGO_SECURE_SSL_REDIRECT=false
+      - DJANGO_SERVER_EMAIL=
+      - DJANGO_SETTINGS_MODULE=config.settings.production
+      - POSTGRES_PASSWORD=
+      - POSTGRES_USER=postgres
     volumes:
       - inbox-django-media:/app/media
     links:

@@ -116,10 +116,17 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
         },
+        'gunicorn': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'formatter': 'verbose',
+            'filename': '/app/logs/gunicorn.errors',
+            'maxBytes': 1024 * 1024 * 100,  # 100 mb
+        }
     },
     'loggers': {
         'django.request': {
-            'handlers': ['mail_admins'],
+            'handlers': ['mail_admins', 'console'],
             'level': 'ERROR',
             'propagate': True
         },
@@ -127,7 +134,12 @@ LOGGING = {
             'level': 'ERROR',
             'handlers': ['console', 'mail_admins'],
             'propagate': True
-        }
+        },
+        'gunicorn.errors': {
+            'level': 'DEBUG',
+            'handlers': ['gunicorn', 'console'],
+            'propagate': True,
+        },
     }
 }
 
